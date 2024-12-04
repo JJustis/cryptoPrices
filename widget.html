@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .crypto-widget {
+            font-family: Arial, sans-serif;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fff;
+        }
+        .crypto-widget.small { width: 200px; font-size: 12px; }
+        .crypto-widget.medium { width: 300px; font-size: 14px; }
+        .crypto-widget.large { width: 400px; font-size: 16px; }
+        .crypto-price { 
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .crypto-price:last-child { border-bottom: none; }
+        .price-up { color: #28a745; }
+        .price-down { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <script>
+        class CryptoWidget {
+            constructor(elementId, size = 'medium', updateInterval = 60000) {
+                this.element = document.getElementById(elementId);
+                this.size = size;
+                this.prices = {};
+                this.updateInterval = updateInterval;
+                this.init();
+            }
+
+            async init() {
+                this.element.className = `crypto-widget ${this.size}`;
+                await this.updatePrices();
+                setInterval(() => this.updatePrices(), this.updateInterval);
+            }
+
+            async updatePrices() {
+                try {
+                    const response = await fetch('YOUR_DOMAIN/prices.php');
+                    const data = await response.json();
+                    const oldPrices = {...this.prices};
+                    this.prices = data.prices;
+                    this.render(oldPrices);
+                } catch (error) {
+                    console.error('Failed to fetch prices:', error);
+                }
+            }
+
+            render(oldPrices) {
+                this.element.innerHTML = '';
+                for (const [coin, price] of Object.entries(this.prices)) {
+                    const priceChange = oldPrices[coin] ? price - oldPrices[coin] : 0;
+                    const priceClass = priceChange > 0 ? 'price-up' : priceChange < 0 ? 'price-down' : '';
+                    
+                    const div = document.createElement('div');
+                    div.className = `crypto-price ${priceClass}`;
+                    div.innerHTML = `
+                        <span>${coin.charAt(0).toUpperCase() + coin.slice(1)}</span>
+                        <span>$${price.toFixed(2)}</span>
+                    `;
+                    this.element.appendChild(div);
+                }
+            }
+        }
+
+        // Initialize widget when script loads
+        window.addEventListener('load', () => {
+            new CryptoWidget('cryptoWidgetContainer', 'medium');
+        });
+    </script>
+</body>
+</html>
